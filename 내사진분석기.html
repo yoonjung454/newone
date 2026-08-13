@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>내 사진 분석기</title>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+<style>
+  :root{
+    --bg1:#0f0c29;
+    --bg2:#302b63;
+    --bg3:#24243e;
+    --card:#ffffff;
+    --ink:#1f2233;
+    --sub:#6b7086;
+    --accent:#7c5cff;
+    --accent2:#00c2a8;
+    --line:#e7e6f0;
+    --danger:#ff5d73;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:"Apple SD Gothic Neo","Malgun Gothic",-apple-system,BlinkMacSystemFont,sans-serif;
+    background: radial-gradient(1200px 800px at 10% -10%, #4b3bb0 0%, transparent 55%),
+                radial-gradient(1000px 700px at 110% 10%, #00c2a8 0%, transparent 45%),
+                linear-gradient(160deg, var(--bg1), var(--bg2) 55%, var(--bg3));
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+    padding:48px 20px 80px;
+  }
+  .wrap{ width:100%; max-width:880px; }
+  header{ text-align:center; color:#fff; margin-bottom:32px; }
+  header h1{
+    font-size:34px; margin:0 0 8px; font-weight:800; letter-spacing:-0.5px;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+  }
+  header p{ margin:0; color:rgba(255,255,255,0.72); font-size:15px; }
+
+  .card{
+    background:var(--card);
+    border-radius:24px;
+    padding:32px;
+    box-shadow:0 30px 60px -20px rgba(15,12,41,0.45);
+  }
+
+  .dropzone{
+    border:2px dashed var(--line);
+    border-radius:18px;
+    padding:36px 20px;
+    text-align:center;
+    cursor:pointer;
+    transition:.2s ease;
+    background:#fafaff;
+  }
+  .dropzone.drag{
+    border-color:var(--accent);
+    background:#f2effe;
+  }
+  .dropzone .icon{ font-size:38px; margin-bottom:10px; }
+  .dropzone .main{ font-weight:700; font-size:16px; margin-bottom:4px; }
+  .dropzone .sub{ color:var(--sub); font-size:13px; }
+  input[type="file"]{ display:none; }
+
+  .stage{ display:none; margin-top:24px; }
+  .stage.show{ display:block; }
+
+  .image-box{
+    position:relative;
+    border-radius:16px;
+    overflow:hidden;
+    background:#111;
+    line-height:0;
+  }
+  .image-box img{ display:block; width:100%; max-height:520px; object-fit:contain; background:#111; }
+  .image-box canvas{ position:absolute; top:0; left:0; width:100%; height:100%; }
+
+  .actions{
+    display:flex; gap:12px; margin-top:20px; flex-wrap:wrap;
+  }
+  button{
+    border:none; border-radius:12px; padding:14px 22px; font-size:15px;
+    font-weight:700; cursor:pointer; transition:.15s ease; font-family:inherit;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg,var(--accent),#5b3df0);
+    color:#fff; flex:1; min-width:200px;
+    box-shadow:0 12px 24px -8px rgba(124,92,255,0.55);
+  }
+  .btn-primary:disabled{ opacity:.55; cursor:not-allowed; box-shadow:none; }
+  .btn-primary:not(:disabled):hover{ transform:translateY(-1px); }
+  .btn-ghost{
+    background:#f1f1f8; color:var(--ink);
+  }
+  .btn-ghost:hover{ background:#e7e6f5; }
+
+  .status{
+    margin-top:14px; font-size:13.5px; color:var(--sub);
+    display:flex; align-items:center; gap:8px; min-height:18px;
+  }
+  .spinner{
+    width:14px; height:14px; border-radius:50%;
+    border:2px solid #ddd; border-top-color:var(--accent);
+    animation:spin 0.8s linear infinite; display:none;
+  }
+  .spinner.show{ display:inline-block; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .results{ margin-top:28px; }
+  .results h2{ font-size:16px; margin:0 0 14px; }
+  .empty-result{ color:var(--sub); font-size:14px; padding:16px 0; }
+
+  .result-item{
+    display:flex; align-items:center; gap:14px;
+    padding:14px 16px; border-radius:14px; background:#f8f8fc;
+    margin-bottom:10px; border:1px solid var(--line);
+  }
+  .swatch{ width:14px; height:14px; border-radius:4px; flex:none; }
+  .result-name{ font-weight:700; font-size:15px; flex:1; }
+  .result-sub{ font-size:12px; color:var(--sub); margin-top:2px; }
+  .conf-bar{
+    width:120px; height:6px; border-radius:4px; background:#e6e5f2; overflow:hidden; flex:none;
+  }
+  .conf-fill{ height:100%; border-radius:4px; background:linear-gradient(90deg,var(--accent),var(--accent2)); }
+  .conf-pct{ width:52px; text-align:right; font-size:13px; font-weight:700; color:var(--sub); flex:none; }
+
+  footer{
+    text-align:center; margin-top:28px; color:rgba(255,255,255,0.55); font-size:12.5px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>📸 내 사진 분석기</h1>
+      <p>사진을 올리고 <strong>물체 찾기</strong> 버튼을 누르면 사진 속 물체를 찾아드려요</p>
+    </header>
+
+    <div class="card">
+      <div class="dropzone" id="dropzone">
+        <div class="icon">🖼️</div>
+        <div class="main">여기에 사진을 끌어다 놓거나 클릭해서 선택하세요</div>
+        <div class="sub">JPG · PNG · WEBP 지원</div>
+        <input type="file" id="fileInput" accept="image/*" />
+      </div>
+
+      <div class="stage" id="stage">
+        <div class="image-box" id="imageBox">
+          <img id="preview" alt="업로드한 사진 미리보기" />
+          <canvas id="overlay"></canvas>
+        </div>
+
+        <div class="actions">
+          <button class="btn-primary" id="analyzeBtn">🔍 물체 찾기</button>
+          <button class="btn-ghost" id="resetBtn">다른 사진 선택</button>
+        </div>
+
+        <div class="status" id="status">
+          <span class="spinner" id="spinner"></span>
+          <span id="statusText"></span>
+        </div>
+
+        <div class="results" id="results" style="display:none;">
+          <h2>찾은 물체</h2>
+          <div id="resultList"></div>
+        </div>
+      </div>
+    </div>
+
+    <footer>모든 분석은 브라우저 안에서 실행돼요 (TensorFlow.js · COCO-SSD) — 사진이 서버로 전송되지 않습니다.</footer>
+  </div>
+
+<script>
+  // COCO-SSD 클래스명 한국어 번역
+  const KOREAN_NAME = {
+    "person":"사람","bicycle":"자전거","car":"자동차","motorcycle":"오토바이","airplane":"비행기",
+    "bus":"버스","train":"기차","truck":"트럭","boat":"보트","traffic light":"신호등",
+    "fire hydrant":"소화전","stop sign":"정지 표지판","parking meter":"주차 요금 정산기","bench":"벤치","bird":"새",
+    "cat":"고양이","dog":"강아지","horse":"말","sheep":"양","cow":"소",
+    "elephant":"코끼리","bear":"곰","zebra":"얼룩말","giraffe":"기린","backpack":"백팩",
+    "umbrella":"우산","handbag":"핸드백","tie":"넥타이","suitcase":"여행 가방","frisbee":"프리스비",
+    "skis":"스키","snowboard":"스노보드","sports ball":"공","kite":"연","baseball bat":"야구 방망이",
+    "baseball glove":"야구 글러브","skateboard":"스케이트보드","surfboard":"서핑보드","tennis racket":"테니스 라켓","bottle":"병",
+    "wine glass":"와인잔","cup":"컵","fork":"포크","knife":"칼","spoon":"숟가락",
+    "bowl":"그릇","banana":"바나나","apple":"사과","sandwich":"샌드위치","orange":"오렌지",
+    "broccoli":"브로콜리","carrot":"당근","hot dog":"핫도그","pizza":"피자","donut":"도넛",
+    "cake":"케이크","chair":"의자","couch":"소파","potted plant":"화분","bed":"침대",
+    "dining table":"식탁","toilet":"변기","tv":"텔레비전","laptop":"노트북","mouse":"마우스",
+    "remote":"리모컨","keyboard":"키보드","cell phone":"휴대폰","microwave":"전자레인지","oven":"오븐",
+    "toaster":"토스터","sink":"세면대","refrigerator":"냉장고","book":"책","clock":"시계",
+    "vase":"꽃병","scissors":"가위","teddy bear":"테디베어","hair drier":"헤어드라이어","toothbrush":"칫솔"
+  };
+
+  const COLORS = ["#7c5cff","#00c2a8","#ff5d73","#ffb648","#3fa7ff","#ff7ce5","#8bd450","#c58bff"];
+
+  const dropzone = document.getElementById("dropzone");
+  const fileInput = document.getElementById("fileInput");
+  const stage = document.getElementById("stage");
+  const preview = document.getElementById("preview");
+  const overlay = document.getElementById("overlay");
+  const imageBox = document.getElementById("imageBox");
+  const analyzeBtn = document.getElementById("analyzeBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const statusText = document.getElementById("statusText");
+  const spinner = document.getElementById("spinner");
+  const resultsBox = document.getElementById("results");
+  const resultList = document.getElementById("resultList");
+
+  let model = null;
+  let modelLoading = null;
+
+  function setStatus(text, busy){
+    statusText.textContent = text || "";
+    spinner.classList.toggle("show", !!busy);
+  }
+
+  async function ensureModel(){
+    if (model) return model;
+    if (!modelLoading){
+      setStatus("AI 모델을 불러오는 중이에요 (처음 한 번만)...", true);
+      analyzeBtn.disabled = true;
+      modelLoading = cocoSsd.load().then(m => {
+        model = m;
+        analyzeBtn.disabled = false;
+        setStatus("모델 준비 완료! 물체 찾기를 눌러보세요.", false);
+        return m;
+      }).catch(err => {
+        setStatus("모델을 불러오지 못했어요. 인터넷 연결을 확인해주세요.", false);
+        analyzeBtn.disabled = false;
+        throw err;
+      });
+    }
+    return modelLoading;
+  }
+
+  function openFile(file){
+    if (!file || !file.type.startsWith("image/")) return;
+    const url = URL.createObjectURL(file);
+    preview.onload = () => {
+      stage.classList.add("show");
+      dropzone.style.display = "none";
+      resultsBox.style.display = "none";
+      resultList.innerHTML = "";
+      clearOverlay();
+      setStatus("", false);
+      ensureModel();
+    };
+    preview.src = url;
+  }
+
+  dropzone.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", e => openFile(e.target.files[0]));
+
+  ["dragenter","dragover"].forEach(evt =>
+    dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add("drag"); })
+  );
+  ["dragleave","drop"].forEach(evt =>
+    dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.remove("drag"); })
+  );
+  dropzone.addEventListener("drop", e => openFile(e.dataTransfer.files[0]));
+
+  resetBtn.addEventListener("click", () => {
+    stage.classList.remove("show");
+    dropzone.style.display = "block";
+    fileInput.value = "";
+    preview.src = "";
+    clearOverlay();
+  });
+
+  function clearOverlay(){
+    const ctx = overlay.getContext("2d");
+    ctx.clearRect(0,0,overlay.width, overlay.height);
+  }
+
+  function sizeOverlayToImage(){
+    const rect = preview.getBoundingClientRect();
+    overlay.width = preview.naturalWidth;
+    overlay.height = preview.naturalHeight;
+    overlay.style.width = rect.width + "px";
+    overlay.style.height = rect.height + "px";
+  }
+
+  analyzeBtn.addEventListener("click", async () => {
+    if (!preview.src) return;
+    try{
+      analyzeBtn.disabled = true;
+      setStatus("모델을 불러오는 중...", true);
+      const m = await ensureModel();
+      setStatus("사진을 분석하는 중...", true);
+
+      sizeOverlayToImage();
+      const predictions = await m.detect(preview);
+      drawBoxes(predictions);
+      renderResults(predictions);
+
+      setStatus(predictions.length ? `${predictions.length}개의 물체를 찾았어요.` : "물체를 찾지 못했어요.", false);
+    } catch(err){
+      console.error(err);
+      setStatus("분석 중 오류가 발생했어요. 다시 시도해주세요.", false);
+    } finally {
+      analyzeBtn.disabled = false;
+    }
+  });
+
+  function drawBoxes(predictions){
+    const ctx = overlay.getContext("2d");
+    clearOverlay();
+    predictions.forEach((p, i) => {
+      const color = COLORS[i % COLORS.length];
+      const [x,y,w,h] = p.bbox;
+      ctx.lineWidth = Math.max(2, overlay.width * 0.004);
+      ctx.strokeStyle = color;
+      ctx.strokeRect(x,y,w,h);
+
+      const label = `${KOREAN_NAME[p.class] || p.class} ${Math.round(p.score*100)}%`;
+      ctx.font = `${Math.max(14, overlay.width*0.018)}px sans-serif`;
+      const textWidth = ctx.measureText(label).width;
+      const padding = 6;
+      const boxH = Math.max(20, overlay.width*0.026);
+
+      ctx.fillStyle = color;
+      ctx.fillRect(x, Math.max(0,y-boxH), textWidth + padding*2, boxH);
+      ctx.fillStyle = "#fff";
+      ctx.fillText(label, x + padding, Math.max(boxH-6, y-6));
+    });
+  }
+
+  function renderResults(predictions){
+    resultList.innerHTML = "";
+    if (!predictions.length){
+      resultsBox.style.display = "block";
+      resultList.innerHTML = `<div class="empty-result">사진에서 알아볼 수 있는 물체를 찾지 못했어요. 더 선명한 사진으로 다시 시도해보세요.</div>`;
+      return;
+    }
+    resultsBox.style.display = "block";
+    const sorted = [...predictions].sort((a,b) => b.score - a.score);
+    sorted.forEach((p, i) => {
+      const color = COLORS[i % COLORS.length];
+      const pct = Math.round(p.score * 100);
+      const name = KOREAN_NAME[p.class] || p.class;
+      const item = document.createElement("div");
+      item.className = "result-item";
+      item.innerHTML = `
+        <div class="swatch" style="background:${color}"></div>
+        <div style="flex:1;">
+          <div class="result-name">${name}</div>
+          <div class="result-sub">${p.class}</div>
+        </div>
+        <div class="conf-bar"><div class="conf-fill" style="width:${pct}%"></div></div>
+        <div class="conf-pct">${pct}%</div>
+      `;
+      resultList.appendChild(item);
+    });
+  }
+
+  window.addEventListener("resize", () => {
+    if (preview.src && overlay.width) sizeOverlayToImage();
+  });
+</script>
+</body>
+</html>
