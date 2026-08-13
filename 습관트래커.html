@@ -1,0 +1,487 @@
+<title>Trailhead</title>
+<style>
+  :root {
+    --ink: #1E2422;
+    --muted: #5B6660;
+    --paper: #EEF1ED;
+    --surface: #FFFFFF;
+    --line: #D8DED9;
+    --accent: #2F6F5E;
+    --accent-strong: #1F5245;
+    --accent-soft: #DCEAE5;
+    --gold: #C97A26;
+    --gold-soft: #F3E0C4;
+    --danger: #B24444;
+    --shadow: 0 1px 2px rgba(30, 36, 34, 0.06), 0 6px 20px rgba(30, 36, 34, 0.05);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #E7ECE8;
+      --muted: #93A39C;
+      --paper: #11171B;
+      --surface: #19201F;
+      --line: #2A3330;
+      --accent: #6FBFA8;
+      --accent-strong: #8ED4BF;
+      --accent-soft: #1E322C;
+      --gold: #E3A257;
+      --gold-soft: #3A2E1B;
+      --danger: #D98080;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ink: #E7ECE8;
+    --muted: #93A39C;
+    --paper: #11171B;
+    --surface: #19201F;
+    --line: #2A3330;
+    --accent: #6FBFA8;
+    --accent-strong: #8ED4BF;
+    --accent-soft: #1E322C;
+    --gold: #E3A257;
+    --gold-soft: #3A2E1B;
+    --danger: #D98080;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, "Malgun Gothic", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #app {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 96px;
+  }
+
+  header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 28px;
+  }
+
+  .eyebrow {
+    font-size: 12.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  h1 {
+    font-family: Georgia, "Iowan Old Style", "Noto Serif KR", "Palatino Linotype", serif;
+    font-size: 34px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 14.5px;
+    margin-top: 2px;
+  }
+
+  .summary {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+  }
+
+  .summary-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+
+  .summary-label {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .summary-count {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .bar-track {
+    height: 8px;
+    border-radius: 99px;
+    background: var(--line);
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--gold);
+    transition: width 0.4s ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bar-fill { transition: none; }
+  }
+
+  form.add-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .add-row input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: 14.5px;
+    color: var(--ink);
+    font-family: inherit;
+  }
+
+  .add-row input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .add-row input::placeholder { color: var(--muted); }
+
+  .add-row button {
+    background: var(--accent);
+    color: var(--surface);
+    border: none;
+    border-radius: 10px;
+    padding: 0 20px;
+    font-size: 14.5px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .add-row button:hover { background: var(--accent-strong); }
+
+  .add-row button:focus-visible {
+    outline: 2px solid var(--accent-strong);
+    outline-offset: 2px;
+  }
+
+  .habit-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .habit-card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .habit-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .habit-name {
+    font-size: 15.5px;
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .habit-streak {
+    font-size: 12.5px;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+
+  .habit-streak.zero { color: var(--muted); font-weight: 400; }
+
+  .trail {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    width: 200px;
+    flex-shrink: 0;
+  }
+
+  .trail::before {
+    content: "";
+    position: absolute;
+    left: 11px;
+    right: 11px;
+    top: 11px;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .stone-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .stone {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+  }
+
+  .stone.done {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+  }
+
+  .stone-col.today .stone {
+    width: 26px;
+    height: 26px;
+    cursor: pointer;
+    border-color: var(--muted);
+  }
+
+  .stone-col.today .stone.done {
+    background: var(--gold-soft);
+    border-color: var(--gold);
+  }
+
+  .stone-col.today .stone:hover { border-color: var(--accent); }
+
+  .stone-col.today .stone:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .stone.done::after {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: var(--accent);
+    transform: scale(0.4);
+  }
+
+  .stone-col.today .stone.done::after { background: var(--gold); }
+
+  .day-label {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .stone-col.today .day-label { color: var(--ink); font-weight: 700; }
+
+  .remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px;
+    opacity: 0.45;
+  }
+
+  .remove-btn:hover { opacity: 1; color: var(--danger); }
+
+  .remove-btn:focus-visible {
+    outline: 2px solid var(--danger);
+    outline-offset: 1px;
+    opacity: 1;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+    padding: 40px 20px;
+    border: 1px dashed var(--line);
+    border-radius: 14px;
+  }
+
+  .note {
+    margin-top: 28px;
+    font-size: 12.5px;
+    color: var(--muted);
+    text-align: center;
+  }
+</style>
+
+<div id="app">
+  <header>
+    <span class="eyebrow" id="today-label"></span>
+    <h1>Trailhead</h1>
+    <p class="subtitle">매일 걷는 길, 하나씩 디딤돌을 놓아보세요.</p>
+  </header>
+
+  <div class="summary">
+    <div class="summary-top">
+      <span class="summary-label">오늘의 진행</span>
+      <span class="summary-count" id="summary-count">0 / 0</span>
+    </div>
+    <div class="bar-track"><div class="bar-fill" id="bar-fill" style="width:0%"></div></div>
+  </div>
+
+  <form class="add-row" id="add-form">
+    <input type="text" id="add-input" placeholder="새 습관 이름 (예: 스트레칭 5분)" maxlength="40" autocomplete="off" />
+    <button type="submit">추가</button>
+  </form>
+
+  <div class="habit-list" id="habit-list"></div>
+
+  <p class="note">이 트래커는 저장 없이 즉석에서 써보는 데모예요 — 새로고침하면 초기화돼요.</p>
+</div>
+
+<script>
+  const DAY_LETTERS = ['일', '월', '화', '수', '목', '금', '토'];
+
+  const habits = [
+    { name: '아침 물 한잔 마시기', history: [true, true, true, true, true, true, true] },
+    { name: '책 20쪽 읽기', history: [false, true, true, true, true, true, false] },
+    { name: '운동 30분', history: [true, false, true, true, false, true, true] },
+  ];
+
+  function calcStreak(history) {
+    let i = history.length - 1;
+    let count = 0;
+    if (!history[i]) i--;
+    while (i >= 0 && history[i]) { count++; i--; }
+    return count;
+  }
+
+  function dayLabelFor(offsetFromToday) {
+    const d = new Date();
+    d.setDate(d.getDate() - offsetFromToday);
+    return DAY_LETTERS[d.getDay()];
+  }
+
+  function render() {
+    const list = document.getElementById('habit-list');
+    list.innerHTML = '';
+
+    if (habits.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = '아직 추적 중인 습관이 없어요. 위에서 첫 습관을 추가해보세요.';
+      list.appendChild(empty);
+    }
+
+    habits.forEach((habit, idx) => {
+      const streak = calcStreak(habit.history);
+      const card = document.createElement('div');
+      card.className = 'habit-card';
+
+      const info = document.createElement('div');
+      info.className = 'habit-info';
+      const name = document.createElement('span');
+      name.className = 'habit-name';
+      name.textContent = habit.name;
+      const streakEl = document.createElement('span');
+      streakEl.className = 'habit-streak' + (streak === 0 ? ' zero' : '');
+      streakEl.textContent = streak === 0 ? '오늘부터 시작' : streak + '일째 연속';
+      info.appendChild(name);
+      info.appendChild(streakEl);
+
+      const trail = document.createElement('div');
+      trail.className = 'trail';
+      habit.history.forEach((done, dayIdx) => {
+        const offset = 6 - dayIdx;
+        const isToday = offset === 0;
+        const col = document.createElement('div');
+        col.className = 'stone-col' + (isToday ? ' today' : '');
+
+        const stone = document.createElement(isToday ? 'button' : 'div');
+        stone.className = 'stone' + (done ? ' done' : '');
+        if (isToday) {
+          stone.setAttribute('aria-label', done ? '오늘 완료 취소' : '오늘 완료로 표시');
+          stone.addEventListener('click', () => {
+            habit.history[6] = !habit.history[6];
+            render();
+          });
+        }
+
+        const label = document.createElement('span');
+        label.className = 'day-label';
+        label.textContent = dayLabelFor(offset);
+
+        col.appendChild(stone);
+        col.appendChild(label);
+        trail.appendChild(col);
+      });
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-btn';
+      removeBtn.setAttribute('aria-label', habit.name + ' 삭제');
+      removeBtn.textContent = '×';
+      removeBtn.addEventListener('click', () => {
+        habits.splice(idx, 1);
+        render();
+      });
+
+      card.appendChild(info);
+      card.appendChild(trail);
+      card.appendChild(removeBtn);
+      list.appendChild(card);
+    });
+
+    const done = habits.filter(h => h.history[6]).length;
+    const total = habits.length;
+    document.getElementById('summary-count').textContent = done + ' / ' + total;
+    document.getElementById('bar-fill').style.width = (total === 0 ? 0 : (done / total) * 100) + '%';
+  }
+
+  document.getElementById('add-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('add-input');
+    const value = input.value.trim();
+    if (!value) return;
+    habits.push({ name: value, history: [false, false, false, false, false, false, false] });
+    input.value = '';
+    render();
+  });
+
+  const today = new Date();
+  document.getElementById('today-label').textContent =
+    today.getFullYear() + '년 ' + (today.getMonth() + 1) + '월 ' + today.getDate() + '일 ' + DAY_LETTERS[today.getDay()] + '요일';
+
+  render();
+</script>
